@@ -2,10 +2,11 @@ import pandas as pd
 import numpy as np
 import re
 import streamlit as st
+import altair as alt
 
 st.set_page_config(layout="wide")
 
-st.title("Transaction History Analyzer")
+st.title("Argus : Transaction History Analyzer")
 
 st.write(
     """
@@ -93,6 +94,20 @@ if uploaded_file is not None:
                 summary_data.append({"Category": category.capitalize(), "Total Spent (INR)": f"{totalSpent:.2f}"})
             
             st.table(pd.DataFrame(summary_data))
+
+
+            summary_df = pd.DataFrame(summary_data)
+            
+            if not summary_df.empty:
+                chart = alt.Chart(summary_df).mark_bar().encode(
+                    x=alt.X('Category:N', sort='-y'),
+                    y=alt.Y('Total Spent (INR):Q', title='Amount (INR)')
+                ).interactive()
+
+                st.altair_chart(chart, use_container_width=True)
+            else:
+                st.warning("No spending data available to generate a chart.")
+            
 
             netExpenditure = (
                 withdrawalTransactions["Withdrawal Amount (INR )"].sum()
