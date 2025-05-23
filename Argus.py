@@ -101,8 +101,7 @@ if uploaded_file is not None:
             if not summary_df.empty:
                 chart = alt.Chart(summary_df).mark_bar().encode(
                     x=alt.X('Category:N', sort='-y'),
-                    y=alt.Y('Total Spent (INR):Q', title='Amount (INR)'),
-                    tooltip=['Category', alt.Tooltip('Total Spent (INR)', format=',.2f', title='Amount')]
+                    y=alt.Y('Total Spent (INR):Q', title='Amount (INR)')
                 ).interactive()
 
                 st.altair_chart(chart, use_container_width=True)
