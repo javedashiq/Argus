@@ -5,12 +5,10 @@ import streamlit as st
 import altair as alt
 
 st.set_page_config(layout="wide")
-
 st.title("Argus : Transaction History Analyzer")
-
 st.write(
     """
-    Upload your transaction history Excel file to get insights into your spending!
+    Upload your Bank Statement in an Excel file to get insights into your spending!
     """
 )
 
@@ -24,6 +22,7 @@ if uploaded_file is not None:
             skiprows=12,
             usecols=[
                 "S No.",
+                "Transaction Date",
                 "Transaction Remarks",
                 "Withdrawal Amount (INR )",
                 "Deposit Amount (INR )",
@@ -41,17 +40,27 @@ if uploaded_file is not None:
             .fillna(0)
             .astype(float)
         )
+        df["Transaction Date"] = pd.to_datetime(
+            df["Transaction Date"], errors='coerce'
+        )
+
         df["Balance (INR )"] = pd.to_numeric(
             df["Balance (INR )"], errors="coerce"
         ).astype(float)
 
         st.success("File uploaded and processed successfully!")
 
-        st.subheader("Transaction Data Preview")
+        start_date = df['Transaction Date'].min().date()
+        end_date = df['Transaction Date'].max().date()
+        START_END_DATE_TEXT =  f" On {start_date}" if start_date == end_date else +f" From {start_date} To {end_date}"
+        
+
+        st.subheader("Transaction Data Preview" + START_END_DATE_TEXT)
+        df.dropna(subset=['Transaction Date'], inplace=True) # Dropping all data with date as null, those will be invalid anyways
         st.dataframe(df.head())
 
-        st.sidebar.header("Configure Categories")
         
+        st.sidebar.header("Configure Categories")
         default_categories = "shopping,snacks,food"
         category_input = st.sidebar.text_area(
             "Enter categories separated by commas:", 
@@ -86,7 +95,7 @@ if uploaded_file is not None:
 
             dataMap["Uncategorized"] = otherWithdrawTransactions
 
-            st.header("Spending Summary by Category")
+            st.header("Spending Summary by Category" + START_END_DATE_TEXT)
             
             summary_data = []
             for category, filtered_df in dataMap.items():
@@ -121,8 +130,8 @@ if uploaded_file is not None:
                 f"*(This is calculated as total withdrawals minus total deposits)*"
             )
 
-            st.subheader("Detailed Transactions by Category")
-            selected_category_detail = st.selectbox(
+            st.subheader("Detailed Transactions by Category" + START_END_DATE_TEXT)
+            selected_category_detail = st.selectbox( 
                 "Select a category to view detailed transactions:", 
                 list(dataMap.keys())
             )
