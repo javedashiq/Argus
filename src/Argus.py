@@ -29,6 +29,7 @@ if uploadedFile is not None:
             based on your file's header structure.
             """
         )
+
 if dataFrame is not None and not dataFrame.empty:
     st.success("File uploaded and processed successfully!")
     
@@ -38,7 +39,6 @@ if dataFrame is not None and not dataFrame.empty:
 
 
     st.subheader("Transaction Data Preview" + START_END_DATE_TEXT)
-
 
     st.sidebar.header("Configure Categories")
     default_categories = "shopping,snacks,food"
@@ -55,9 +55,9 @@ if dataFrame is not None and not dataFrame.empty:
         st.sidebar.write("Analyzing for categories: ", ", ".join(categories))
 
         dataMap = {}
-        withdrawalTransactions = dataFrame[dataFrame["Deposit Amount (INR )"] == 0].copy()
+        withdrawalTransactions = dataFrame[dataFrame["Deposit Amount"] == 0].copy()
         otherWithdrawTransactions = withdrawalTransactions.copy()
-        depositTransactions = dataFrame[dataFrame["Deposit Amount (INR )"] != 0].copy()
+        depositTransactions = dataFrame[dataFrame["Deposit Amount"] != 0].copy()
 
         for i in categories:
 
@@ -79,7 +79,7 @@ if dataFrame is not None and not dataFrame.empty:
         
         summary_data = []
         for category, filtered_df in dataMap.items():
-            totalSpent = filtered_df["Withdrawal Amount (INR )"].sum()
+            totalSpent = filtered_df["Withdraw Amount"].sum()
             summary_data.append({"Category": category.capitalize(), "Total Spent (INR)": f"{totalSpent:.2f}"})
         
         st.table(pd.DataFrame(summary_data))
@@ -99,8 +99,8 @@ if dataFrame is not None and not dataFrame.empty:
         
 
         netExpenditure = (
-            withdrawalTransactions["Withdrawal Amount (INR )"].sum()
-            - depositTransactions["Deposit Amount (INR )"].sum()
+            withdrawalTransactions["Withdraw Amount"].sum()
+            - depositTransactions["Deposit Amount"].sum()
         )
         st.markdown(
             f"---"
