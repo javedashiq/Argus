@@ -1,10 +1,10 @@
 import pandas as pd
-import numpy as np
 import re
 import streamlit as st
 import altair as alt
 
 from helpers.helpers import cleanUpAndTransformInput
+
 st.set_page_config(layout="wide")
 st.title("Argus : Transaction History Analyzer")
 st.write(
@@ -14,6 +14,26 @@ st.write(
 )
 
 dataFrame = None
+categories = []
+
+st.subheader("Configure Categories")
+if 'num_input' not in st.session_state:
+    st.session_state.num_input = 1
+
+for i in range(st.session_state.num_input):
+    input_value = st.text_input(f"Input {i + 1}:", key=f"dynamic_input_{i}")
+    categories.append(input_value)
+col1, col2 = st.columns(2)
+with col1:
+    if st.button("Add Another Category", disabled=(st.session_state.num_input == 10),use_container_width = True):
+        st.session_state.num_input += 1
+        st.rerun()
+with col2:
+    if st.button("Remove Last Input", disabled=(st.session_state.num_input <= 1),use_container_width = True):
+        st.session_state.num_input -= 1
+        st.rerun()
+categories = [cat.strip() for cat in categories if cat.strip()]
+
 uploadedFile = st.file_uploader(
     "Choose an Excel file", type=["xls", "xlsx"])
 if uploadedFile is not None:
@@ -30,6 +50,8 @@ if uploadedFile is not None:
             """
         )
 
+
+    
 if dataFrame is not None and not dataFrame.empty:
     st.success("File uploaded and processed successfully!")
     
@@ -39,20 +61,12 @@ if dataFrame is not None and not dataFrame.empty:
 
 
     st.subheader("Transaction Data Preview" + START_END_DATE_TEXT)
-
-    st.sidebar.header("Configure Categories")
-    default_categories = "shopping,snacks,food"
-    category_input = st.sidebar.text_area(
-        "Enter categories separated by commas:", 
-        value=default_categories,
-        height=100
-    )
-    categories = [cat.strip() for cat in category_input.split(',') if cat.strip()]
+    st.dataframe(dataFrame.head())
 
     if not categories:
         st.warning("Please enter at least one category in the sidebar to proceed with analysis.")
     else:
-        st.sidebar.write("Analyzing for categories: ", ", ".join(categories))
+        st.write("Analyzing for categories: ", ", ".join(categories))
 
         dataMap = {}
         withdrawalTransactions = dataFrame[dataFrame["Deposit Amount"] == 0].copy()
