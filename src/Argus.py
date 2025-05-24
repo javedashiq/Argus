@@ -3,7 +3,7 @@ import re
 import streamlit as st
 import altair as alt
 
-from helpers.helpers import cleanUpAndTransformInput
+from helpers.helpers import cleanUpAndTransformInput, categorizeData
 
 st.set_page_config(layout="wide")
 st.title("Argus : Transaction History Analyzer")
@@ -64,30 +64,13 @@ if dataFrame is not None and not dataFrame.empty:
     st.dataframe(dataFrame.head())
 
     if not categories:
-        st.warning("Please enter at least one category in the sidebar to proceed with analysis.")
+        st.warning("Please enter at least one category to proceed with analysis.")
     else:
         st.write("Analyzing for categories: ", ", ".join(categories))
 
-        dataMap = {}
-        withdrawalTransactions = dataFrame[dataFrame["Deposit Amount"] == 0].copy()
-        otherWithdrawTransactions = withdrawalTransactions.copy()
-        depositTransactions = dataFrame[dataFrame["Deposit Amount"] != 0].copy()
+        dataMap = categorizeData(dataFrame, categories)
 
-        for i in categories:
-
-            pattern = r'.*/.*/' + re.escape(i) + r'.*'
-        
-            currentCategoryMask = withdrawalTransactions["Transaction Remarks"].str.contains(
-                pattern, case=False, na=False
-            )
-            currentFilterDf = withdrawalTransactions[currentCategoryMask].copy()
-            dataMap[i] = currentFilterDf
-
-            otherWithdrawTransactions = otherWithdrawTransactions[
-                ~currentCategoryMask
-            ].copy()
-
-        dataMap["Uncategorized"] = otherWithdrawTransactions
+### Add Ability to Categoeize Uncategorized data here
 
         st.header("Spending Summary by Category" + START_END_DATE_TEXT)
         
@@ -111,18 +94,40 @@ if dataFrame is not None and not dataFrame.empty:
         else:
             st.warning("No spending data available to generate a chart.")
         
+        totalAmountWithdrawn = dataFrame["Withdraw Amount"].sum()
+        totalAmountDeposited = dataFrame["Deposit Amount"].sum()
+        netExpenditure = totalAmountWithdrawn - totalAmountDeposited
 
-        netExpenditure = (
-            withdrawalTransactions["Withdraw Amount"].sum()
-            - depositTransactions["Deposit Amount"].sum()
-        )
-        st.markdown(
-            f"---"
-        )
-        st.subheader(f"Total Net Expenditure: :red[{netExpenditure:.2f}] Rupees")
-        st.markdown(
-            f"*(This is calculated as total withdrawals minus total deposits)*"
-        )
+        with st.sidebar:
+            st.markdown(f"### **Summary For Transactions** {START_END_DATE_TEXT}")
+            st.markdown("---") 
+            st.metric(
+                label="Total Amount Withdrawn",
+                value=f"{totalAmountWithdrawn:.2f} Rupees",
+                help="This is the total sum of all withdrawal transactions."
+            )
+
+            st.metric(
+                label="Total Amount Deposited",
+                value=f"{totalAmountDeposited:.2f} Rupees",
+                help="This is the total sum of all deposit transactions."
+            )
+
+            st.metric(
+                label="Total Net Expenditure",
+                value=f"{netExpenditure:.2f} Rupees",
+                help="Calculated as Total Withdrawals - Total Deposits.",
+                border=True
+            )
+
+            st.markdown("---")
+            st.markdown(
+                """
+                *Transactions within the selected date range are included.*
+                *The Net Expenditure indicates your overall spending*
+                """
+            )
+
 
         st.subheader("Detailed Transactions by Category" + START_END_DATE_TEXT)
         selected_category_detail = st.selectbox( 

@@ -37,14 +37,13 @@ def cleanUpAndTransformInput(uploadedFile):
 
     return df
 
-def process_categories(data_frame, category_list):
+def categorizeData(data_frame, category_list):
     data_map = {}
-    # Use full column names as per cleanUpAndTransformInput
-    withdrawal_transactions = data_frame[data_frame["Deposit Amount (INR )"] == 0].copy()
+    withdrawal_transactions = data_frame[data_frame["Deposit Amount"] == 0].copy()
     transactions_remaining_for_others = withdrawal_transactions.reset_index(drop=True).copy()
 
     for category in category_list:
-        if not category: # Skip empty category strings if any
+        if not category:
             continue
         pattern = r'.*/.*/' + re.escape(category) + r'.*'
         current_category_mask = transactions_remaining_for_others["Transaction Remarks"].str.contains(
